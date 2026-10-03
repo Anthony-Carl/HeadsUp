@@ -51,9 +51,36 @@
 # Written by me
 
 # Roll Function
-- **File:** `main.dart` 
-- **Commit:**
-- **What it does and why it is built this way:**
+- **File:** `main.dart`
+- **Commit:** https://github.com/Anthony-Carl/HeadsUp/commit/b59a957d326eab92eba4bc1c6a91ffbdf7340696
+- **What it does and why it is built this way:** The `_rollDice` method in
+  `_MainScreenState` generates a random result using `Random.nextInt(_selectedDie) + 1`,
+  scoped to whichever die is currently selected, then updates `_result` and
+  inserts a new `RollRecord` at the front of `_rolls` inside `setState`. I wrote
+  this myself so the roll range always matches the selected die and the UI
+  updates immediately when a roll happens.
+
+# History Tracking
+- **File:** `main.dart`, `history_screen.dart`
+- **Commit:** https://github.com/Anthony-Carl/HeadsUp/commit/8e0a02f0eb5d5d898de9734226b9e1da37099f47
+- **What it does and why it is built this way:** Each roll is stored as a
+  `RollRecord` (sides + result) in a `List<RollRecord>` held in `MainScreen`'s
+  state, with new rolls inserted at index 0 so the most recent roll shows first.
+  `HistoryScreen` just renders that list read-only via `ListView`/`ListTile`,
+  keeping the screen itself stateless and letting `MainScreen` own the data.
+
+  This will be changed in the future to be saved locally in a .txt file, so that the history will be saved throughout different sessions.
+
+# Dice Selection
+- **File:** `main.dart`, `dice_selection_screen.dart`
+- **Commit:** https://github.com/Anthony-Carl/HeadsUp/commit/8e0a02f0eb5d5d898de9734226b9e1da37099f47
+- **What it does and why it is built this way:**             `DiceSelectionScreen` is a    
+  stateless widget that just displays the fixed list of die options and reports
+  taps back up via `onSelected`/`onConfirm` callbacks. The actual state
+  (`_selectedDie`) lives in `MainScreen`, along with the logic to clamp
+  `_result` down if it's higher than the newly selected die's max. I wrote it
+  this way so the selection screen has no logic of its own and can't get out
+  of sync with the roll logic.
 
 **The AI-written part I understand best**
 - **File:**
