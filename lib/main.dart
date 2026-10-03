@@ -75,8 +75,10 @@ class _MainScreenState extends State<MainScreen> {
         index: _selectedScreen,
         children: [
           DiceRollScreen(
+            sides: _selectedDie,
             result: _result,
             onRoll: _rollDice,
+            onSelectDie: () => _selectScreen(2),
           ),
           HistoryScreen(rolls: _rolls),
           DiceSelectionScreen(
