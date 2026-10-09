@@ -1,7 +1,11 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:device_preview/device_preview.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'screens/dice_roll_screen.dart';
 import 'screens/dice_selection_screen.dart';
@@ -10,7 +14,7 @@ import 'screens/history_screen.dart';
 void main() {
   runApp(
     DevicePreview(
-      enabled: true,
+      enabled: kIsWeb && kDebugMode,
       builder: (context) => const HeadsUpApp(),
     ),
   );
@@ -46,15 +50,44 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedScreen = 0;
   int _selectedDie = 20;
   int _result = 15;
+  int _historyVersion = 0;
   final Random _random = Random();
-  final List<RollRecord> _rolls = [];
+  late final Future<File> _historyFile = _getHistoryFile();
 
-  void _rollDice() {
+  Future<File> _getHistoryFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return File('${directory.path}${Platform.pathSeparator}roll_history.txt');
+  }
+
+  Future<void> _rollDice() async {
     final result = _random.nextInt(_selectedDie) + 1;
-    setState(() {
-      _result = result;
-      _rolls.insert(0, RollRecord(sides: _selectedDie, result: result));
-    });
+    final sides = _selectedDie;
+    try {
+      final file = await _historyFile;
+      await file.writeAsString(
+        '$sides,$result\n',
+        mode: FileMode.append,
+        flush: true,
+      );
+      if (!mounted) return;
+      setState(() {
+        _result = result;
+        _historyVersion++;
+      });
+    } on FileSystemException catch (error) {
+      _showHistoryError(error.message);
+    } on PlatformException catch (error) {
+      _showHistoryError(error.message ?? error.code);
+    } on MissingPluginException catch (error) {
+      _showHistoryError(error.message ?? 'Storage plugin is unavailable.');
+    }
+  }
+
+  void _showHistoryError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Could not save roll history: $message')),
+    );
   }
 
   @override
@@ -70,6 +103,14 @@ class _MainScreenState extends State<MainScreen> {
               ),
         title: const Text('Heads Up'),
         centerTitle: true,
+        actions: _selectedScreen == 0
+            ? [
+                TextButton(
+                  onPressed: () => _selectScreen(1),
+                  child: const Text('History'),
+                ),
+              ]
+            : null,
       ),
       body: IndexedStack(
         index: _selectedScreen,
@@ -80,7 +121,23 @@ class _MainScreenState extends State<MainScreen> {
             onRoll: _rollDice,
             onSelectDie: () => _selectScreen(2),
           ),
-          HistoryScreen(rolls: _rolls),
+          FutureBuilder<File>(
+            future: _historyFile,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text('Could not open roll history: ${snapshot.error}'),
+                );
+              }
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return HistoryScreen(
+                file: snapshot.data!,
+                refreshVersion: _historyVersion,
+              );
+            },
+          ),
           DiceSelectionScreen(
             selectedSides: _selectedDie,
             onSelected: (sides) {
@@ -99,20 +156,6 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: Row(
-        children: [
-          _NavigationButton(
-            label: 'History',
-            selected: _selectedScreen == 1,
-            onPressed: () => _selectScreen(1),
-          ),
-          _NavigationButton(
-            label: 'Dice',
-            selected: _selectedScreen == 2,
-            onPressed: () => _selectScreen(2),
-          ),
-        ],
-      ),
     );
   }
 
@@ -120,32 +163,5 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _selectedScreen = index;
     });
-  }
-}
-
-class _NavigationButton extends StatelessWidget {
-  const _NavigationButton({
-    required this.label,
-    required this.selected,
-    required this.onPressed,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: TextButton(
-        onPressed: onPressed,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
   }
 }
