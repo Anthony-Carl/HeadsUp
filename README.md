@@ -27,9 +27,9 @@ endorsed by or affiliated with Flutter or Google.
 
 ## Presentation
 
-- Video (public Google Drive link): https://...
-- Slides (link or PDF): https://...
-- Square image: in this folder, or a link.
+- Video (public Google Drive link): https://drive.google.com/drive/u/1/folders/1Pzj94ijIWcdnw784kFEWZ6xJo_WocfLR
+- Slides (link or PDF): https://drive.google.com/drive/u/1/folders/1Pzj94ijIWcdnw784kFEWZ6xJo_WocfLR
+- Square image: https://drive.google.com/drive/u/1/folders/1Pzj94ijIWcdnw784kFEWZ6xJo_WocfLR
 
 ## AI usage
 
